@@ -1,0 +1,17 @@
+# Bỏ qua thư mục dữ liệu nặng
+data/
+temp_clones/
+
+# Bỏ qua file rác của Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Bỏ qua biến môi trường và settings
+.env
+.venv
+env/
+venv/
+.vscode/
+.idea/
+.DS_Store

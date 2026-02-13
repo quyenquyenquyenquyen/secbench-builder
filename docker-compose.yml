@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  secbench-builder:
+    build: .
+    container_name: secbench_builder
+    volumes:
+      - ./data:/app/data
+    environment:
+      - MAX_THREADS=4
