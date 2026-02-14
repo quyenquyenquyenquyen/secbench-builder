@@ -1,6 +1,8 @@
 # Bỏ qua thư mục dữ liệu nặng
 data/
 temp_clones/
+raw/
+processed/
 
 # Bỏ qua file rác của Python
 __pycache__/

@@ -1,58 +1,85 @@
 from tree_sitter import Language, Parser
 import tree_sitter_javascript as tsjavascript
+import tree_sitter_typescript as tstypescript
+import tree_sitter_python as tspython
+import tree_sitter_java as tsjava
+import tree_sitter_cpp as tscpp
 
-# --- 1. Language Configuration (Initialize once) ---
 try:
-    # For newer tree-sitter versions
-    JS_LANGUAGE = Language(tsjavascript.language())
-except Exception:
-    # Fallback for older versions
-    JS_LANGUAGE = Language(tsjavascript.language(), "javascript")
+    # Try to load standard TypeScript grammar
+    TS_LANG = Language(tstypescript.language_typescript())
+    # Try to load TSX grammar (for React)
+    TSX_LANG = Language(tstypescript.language_tsx())
+except AttributeError:
+    # Fallback for some older versions 
+    TS_LANG = Language(tstypescript.language())
+    TSX_LANG = TS_LANG
 
-# Initialize global Parser to optimize performance (avoid re-init multiple times)
-parser = Parser(JS_LANGUAGE)
+LANGUAGES = {
+    'javascript': Language(tsjavascript.language()),
+    'typescript': TS_LANG,
+    'tsx': TSX_LANG, # Add a separate parser for TSX
+    'python': Language(tspython.language()),
+    'java': Language(tsjava.language()),
+    'cpp': Language(tscpp.language()),
+    'c': Language(tscpp.language())
+}
 
-# --- 2. Comment Removal Function (Extracted for direct import) ---
-def remove_comments(file_content: str) -> str:
+# --- 2. Function to get Parser by language ---
+def get_parser_for_lang(lang_name):
+    if lang_name in LANGUAGES:
+        return Parser(LANGUAGES[lang_name])
+    return None
+
+def remove_comments(file_content: str, extension: str) -> str:
     """
-    Use Tree-sitter to parse and remove comments, keeping the code intact.
+    Remove comments for all supported languages.
     """
     if not file_content:
         return ""
 
-    # Tree-sitter works with bytes
-    byte_src = bytes(file_content, "utf8")
+    # Normalize extension (e.g., .jsx -> javascript)
+    ext = extension.lower().replace('.', '')
     
-    # Parse code
+    # Mapping logic (Updated to support TSX separately)
+    lang_map = {
+        'js': 'javascript', 'jsx': 'javascript', 'mjs': 'javascript',
+        'ts': 'typescript', 
+        'tsx': 'tsx', # TSX uses a separate parser
+        'py': 'python',
+        'java': 'java',
+        'cpp': 'cpp', 'cc': 'cpp', 'cxx': 'cpp',
+        'c': 'c'
+    }
+    
+    lang_name = lang_map.get(ext)
+    parser = get_parser_for_lang(lang_name)
+    
+    # If parser is not supported, return original code to ensure no data loss
+    if not parser:
+        return file_content
+
+    # Encode to bytes for Tree-sitter processing
+    byte_src = bytes(file_content, "utf8")
     tree = parser.parse(byte_src)
-    root_node = tree.root_node
     
     comments = []
-    
-    # Recursive function to traverse AST and find comment nodes
     def traverse(node):
-        # Node types defined as comments in JS Grammar
-        if node.type in ['comment', 'line_comment', 'block_comment', 'hash_comment']:
+        # Tree-sitter uses a label containing 'comment' for most languages
+        if 'comment' in node.type:
             comments.append(node)
         for child in node.children:
             traverse(child)
     
-    traverse(root_node)
+    traverse(tree.root_node)
     
-    # Sort comments from bottom to top so removal doesn't shift indices of upper comments
+    # Remove from bottom to top to prevent index shifting
     sorted_comments = sorted(comments, key=lambda x: x.start_byte, reverse=True)
-    
-    # Convert bytes to list for mutability
     byte_list = list(byte_src)
     
     for comment in sorted_comments:
-        # Replace comment content with whitespace (Space)
-        # This helps preserve line numbers for easier debugging
         for i in range(comment.start_byte, comment.end_byte):
-            # 32 is ASCII for space, 10 is newline (\n)
-            # If comment has newlines, keep them to preserve file structure
-            if byte_list[i] != 10: 
-                byte_list[i] = 32 
-    
-    # Convert back to string
+            if byte_list[i] != 10: # Keep newline \n (ASCII 10)
+                byte_list[i] = 32 # Replace comment content with spaces (ASCII 32)
+                
     return bytes(byte_list).decode("utf8")

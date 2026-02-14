@@ -3,23 +3,22 @@ import os
 import sys
 sys.setrecursionlimit(10000)
 from concurrent.futures import ThreadPoolExecutor
-from src.config import MAX_THREADS, INPUT_FILE
+from src.config import MAX_THREADS, TASK_FILE 
 from src.preprocess.patch_parser import process_cve_task
 
 def main():
-    # Check if input file exists
-    if not os.path.exists(INPUT_FILE):
-        print(f"[FATAL] Data file not found: {INPUT_FILE}")
+    if not os.path.exists(TASK_FILE):
+        print(f"[FATAL] Data file not found: {TASK_FILE}")
         print("-> Please run command: python3 parse_data.py to generate data first!")
         return
 
-    print(f"[INFO] Loading data from {INPUT_FILE}...")
+    print(f"[INFO] Loading data from {TASK_FILE}...")
     
     try:
-        with open(INPUT_FILE, 'r', encoding='utf-8') as f:
+        with open(TASK_FILE, 'r', encoding='utf-8') as f:
             tasks = json.load(f)
     except json.JSONDecodeError:
-        print(f"[ERROR] File {INPUT_FILE} is malformed or empty.")
+        print(f"[ERROR] File {TASK_FILE} is malformed or empty.")
         return
 
     if not tasks:
@@ -28,13 +27,10 @@ def main():
 
     print(f"[INFO] Processing {len(tasks)} CVEs with {MAX_THREADS} threads...")
 
-    # Run multi-threading
     with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
         results = executor.map(process_cve_task, tasks)
         
-        # Print results (optional)
-        for res in results:
-            print(res)
+        # for res in results: print(res) 
 
     print(f"\n[SUCCESS] Check 'data/processed' directory for results!")
 

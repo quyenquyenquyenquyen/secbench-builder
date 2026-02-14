@@ -2,14 +2,8 @@ import os
 import json
 import re
 from pathlib import Path
-
-SOURCE_PATH = Path("data/raw/SecBench.js")
-OUTPUT_FILE = Path("data/secbench.json")
-
-CATEGORIES = [
-    "prototype-pollution", "redos", "command-injection", 
-    "path-traversal", "ace-breakout"
-]
+# Import CATEGORIES from config
+from src.config import SOURCE_PATH, OUTPUT_FILE, CATEGORIES 
 
 def parse_github_url(url):
     if not url or "github.com" not in url: return None, None

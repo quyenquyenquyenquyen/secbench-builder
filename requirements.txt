@@ -1,13 +1,13 @@
-# Thư viện thao tác với Git
-gitpython
-
-# Thư viện để tải file JSON từ mạng
-requests
-
-# Thư viện phân tích cú pháp (AST)
 tree-sitter
+
 tree-sitter-javascript
 tree-sitter-typescript
+tree-sitter-python
+tree-sitter-java
+tree-sitter-cpp
 
-# Thư viện xử lý dữ liệu (tùy chọn, dùng để đọc/ghi csv nếu cần)
+gitpython
+requests
 pandas
+numpy
+pytest
